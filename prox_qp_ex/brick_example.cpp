@@ -20,20 +20,20 @@ int main()
   int mass = 1.0;
   double dt = 0.01;
 
-  Eigen::VectorXd v = Eigen::VectorXd(dim);
+  Eigen::MatrixXd v = Eigen::MatrixXd(dim, 1);
   v << 2.0, -3.0;
 
-  Eigen::VectorXd qk = Eigen::VectorXd(dim);
+  Eigen::MatrixXd qk = Eigen::MatrixXd(dim, 1);
   qk << 1.0, 3.0;
 
   // ------------------
   // define the problem
   double eps_abs = 1e-9;
 
-  Eigen::VectorXd gravity = Eigen::VectorXd(dim);
+  Eigen::MatrixXd gravity = Eigen::MatrixXd(dim, 1);
   gravity << 0.0, 9.8;
 
-  Eigen::VectorXd J = Eigen::VectorXd(dim);
+  Eigen::MatrixXd J = Eigen::MatrixXd(1, dim);
   J << 0.0, 1.0;
 
   Eigen::MatrixXd mass_matrix = Eigen::MatrixXd(dim, dim);
@@ -46,12 +46,13 @@ int main()
   Eigen::SparseMatrix<double> H_spa(n_in, dim);
   H_spa = H.sparseView();
 
-  Eigen::VectorXd g = Eigen::VectorXd(dim);
+  Eigen::MatrixXd g = Eigen::VectorXd(dim, 1);
   g = mass_matrix * (dt * gravity - v);
 
   // inequality constraints C
   Eigen::MatrixXd C = Eigen::MatrixXd(n_in, dim);
   C = -J * dt;
+
   Eigen::SparseMatrix<double> C_spa(n_in, dim);
   C_spa = C.sparseView();
 
@@ -60,6 +61,12 @@ int main()
 
   Eigen::VectorXd u = Eigen::VectorXd(n_in);
   u = J * qk;  // upper bound
+
+  std::cout << "H:\n" << H_spa << std::endl;
+  std::cout << "g.T:" << g.transpose() << std::endl;
+  std::cout << "C:\n" << C_spa << std::endl;
+  std::cout << "l.T:" << l.transpose() << std::endl;
+  std::cout << "u.T:" << u.transpose() << std::endl;
 
   // Eigen::MatrixXd A = Eigen::MatrixXd::Zero(dim);
 
