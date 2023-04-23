@@ -1,3 +1,10 @@
+// Command to generate the executable:
+// g++ -O3 -march=native -DNDEBUG -std=gnu++17 brick_example.cpp -o brick_example_sparse $(pkg-config --cflags
+// proxsuite)
+//
+
+// Author: Vineet Tambe
+
 #include <iostream>
 #include <proxsuite/proxqp/sparse/sparse.hpp>  // get the sparse API of ProxQP
 #include <Eigen/Core>
