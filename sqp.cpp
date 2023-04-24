@@ -1,3 +1,4 @@
+// https://github.com/nuft/sqp_solver
 #include <Eigen/Eigenvalues>
 #include <cmath>
 #include <iostream>
