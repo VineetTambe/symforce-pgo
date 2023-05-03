@@ -187,8 +187,17 @@ void SQP<T>::solve_qp(Problem& prob, Vector& step, Vector& lambda)
   prob.objective_linearized(x_, grad_obj_, obj_);
   prob.constraint_linearized(x_, Jac_constr_, constr_, l_, u_);
 
+  // std::cout << "Shape of grad_L_ = (" << grad_L_.rows() << "," << grad_L_.cols() << ")" << std::endl;
+
   delta_grad_L_ = -grad_L_;
+
+  // std::cout << "Shape of grad_obj_ = (" << grad_obj_.rows() << "," << grad_obj_.cols() << ")" << std::endl;
+  // std::cout << "Shape of Jac_constr_ = (" << Jac_constr_.rows() << "," << Jac_constr_.cols() << ")" << std::endl;
+  // std::cout << "Shape of lambda_ = (" << lambda_.rows() << "," << lambda_.cols() << ")" << std::endl;
+
   grad_L_ = grad_obj_ + Jac_constr_.transpose() * lambda_;
+
+  // std::cout << "here" << std::endl;
 
   // BFGS update
   if (info_.iter == 1)
@@ -200,6 +209,8 @@ void SQP<T>::solve_qp(Problem& prob, Vector& step, Vector& lambda)
     delta_grad_L_ += grad_L_;  // delta_grad_L_ = grad_L_prev - grad_L
     BFGS_update(Hess_, step_prev_, delta_grad_L_);
   }
+
+  // std::cout << "here" << std::endl;
 
   if (!is_posdef(Hess_))
   {
@@ -258,7 +269,7 @@ bool SQP<T>::run_solve_qp(const Matrix& P, const Vector& q, const Matrix& A, con
   qp.settings.eps_abs = qp_solver_.settings().eps_abs;
   qp.settings.eps_rel = qp_solver_.settings().eps_rel;
   // qp.settings.compute_timings = true; // compute all timings
-  qp.settings.max_iter = qp_solver_.settings().max_iter;
+  // qp.settings.max_iter = qp_solver_.settings().max_iter;
   // qp.settings.alpha_bcl = qp_solver_.settings().alpha;
 
   qp.settings.initial_guess = (qp_solver_.settings().warm_start) ? InitialGuessStatus::WARM_START_WITH_PREVIOUS_RESULT :
