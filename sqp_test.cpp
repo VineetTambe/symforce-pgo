@@ -128,30 +128,29 @@ struct SimpleQP : public NonLinearProblem<double>
 
   void objective(const Vector& x, Scalar& obj) final
   {
-    q = mass_matrix * (dt * gravity - x);
+    // q = mass_matrix * (dt * gravity - x);
     obj = 0.5 * x.dot(P * x) + q.dot(x);
   }
 
   void objective_linearized(const Vector& x, Vector& grad, Scalar& obj) final
   {
     objective(x, obj);
-    grad = P * x + q;
+    grad = mass_matrix * (dt * gravity - x);
   }
 
   void constraint(const Vector& x, Vector& c, Vector& l, Vector& u) final
   {
-    // Gx
-    c << Inertia * dt * x;
+    // h J q
+    c << -Inertia * dt * x;
     l << -Eigen::Infinity;
-    // h
-    // u << ;
+    u << 0.0;
   }
 
   void constraint_linearized(const Vector& x, Matrix& Jc, Vector& c, Vector& l, Vector& u) final
   {
     constraint(x, c, l, u);
     // This will be just G
-    Jc << Inertia * dt;
+    Jc << -Inertia * dt;
     // std::cout << "done linearizing constraint" << std::endl;
   }
 };
