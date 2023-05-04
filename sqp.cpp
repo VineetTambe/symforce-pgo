@@ -93,7 +93,8 @@ void SQP<T>::run_solve(Problem& prob)
     p_lambda -= lambda_;
 
     alpha = line_search(prob, p);
-
+    // std ::cout << "p = " << p << "\n";
+    std ::cout << "p_lambda = " << p_lambda << "\n";
     // take step
     x_ = x_ + alpha * p;
     lambda_ = lambda_ + alpha * p_lambda;
@@ -197,7 +198,7 @@ void SQP<T>::solve_qp(Problem& prob, Vector& step, Vector& lambda)
 
   grad_L_ = grad_obj_ + Jac_constr_.transpose() * lambda_;
 
-  // std::cout << "here" << std::endl;
+  Hess_.setIdentity();
 
   // BFGS update
   if (info_.iter == 1)
@@ -210,7 +211,7 @@ void SQP<T>::solve_qp(Problem& prob, Vector& step, Vector& lambda)
     BFGS_update(Hess_, step_prev_, delta_grad_L_);
   }
 
-  // std::cout << "here" << std::endl;
+  // std::cout << "Hessian = " << Hess_ << std::endl;
 
   if (!is_posdef(Hess_))
   {
@@ -278,7 +279,7 @@ bool SQP<T>::run_solve_qp(const Matrix& P, const Vector& q, const Matrix& A, con
 
   // qp.settings.max_iter_in = 1000;
 
-  qp.settings.eps_rel = 0;
+  // qp.settings.eps_rel = 0;
 
   //   --------------------------------------------
 

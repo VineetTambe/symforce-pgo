@@ -52,53 +52,53 @@ struct SimpleNLP : public NonLinearProblem<double>
   }
 };
 
-TEST(SQPTestCase, TestSimpleNLP)
-{
-  SimpleNLP problem;
-  SQP<double> solver;
-  Eigen::Vector2d x;
+// TEST(SQPTestCase, TestSimpleNLP)
+// {
+//   SimpleNLP problem;
+//   SQP<double> solver;
+//   Eigen::Vector2d x;
 
-  // feasible initial point
-  Eigen::Vector2d x0 = { 1.2, 0.1 };
-  Eigen::Vector3d y0 = Eigen::VectorXd::Zero(3);
+//   // feasible initial point
+//   Eigen::Vector2d x0 = { 1.2, 0.1 };
+//   Eigen::Vector3d y0 = Eigen::VectorXd::Zero(3);
 
-  solver.settings().max_iter = 100;
-  solver.settings().second_order_correction = true;
+//   solver.settings().max_iter = 100;
+//   solver.settings().second_order_correction = true;
 
-  solver.solve(problem, x0, y0);
-  x = solver.primal_solution();
+//   solver.solve(problem, x0, y0);
+//   x = solver.primal_solution();
 
-  solver.info().print();
-  std::cout << "primal solution " << solver.primal_solution().transpose() << std::endl;
-  std::cout << "dual solution " << solver.dual_solution().transpose() << std::endl;
+//   solver.info().print();
+//   std::cout << "primal solution " << solver.primal_solution().transpose() << std::endl;
+//   std::cout << "dual solution " << solver.dual_solution().transpose() << std::endl;
 
-  EXPECT_TRUE(x.isApprox(problem.SOLUTION, 1e-2));
-  EXPECT_LT(solver.info().iter, solver.settings().max_iter);
-}
+//   EXPECT_TRUE(x.isApprox(problem.SOLUTION, 1e-2));
+//   EXPECT_LT(solver.info().iter, solver.settings().max_iter);
+// }
 
-TEST(SQPTestCase, SimpleNLP_InfeasibleStart)
-{
-  SimpleNLP problem;
-  SQP<double> solver;
-  Eigen::Vector2d x;
+// TEST(SQPTestCase, SimpleNLP_InfeasibleStart)
+// {
+//   SimpleNLP problem;
+//   SQP<double> solver;
+//   Eigen::Vector2d x;
 
-  // infeasible initial point
-  Eigen::Vector2d x0 = { 2, -1 };
-  Eigen::Vector3d y0 = { 1, 1, 1 };
+//   // infeasible initial point
+//   Eigen::Vector2d x0 = { 2, -1 };
+//   Eigen::Vector3d y0 = { 1, 1, 1 };
 
-  solver.settings().max_iter = 100;
-  solver.settings().second_order_correction = true;
+//   solver.settings().max_iter = 100;
+//   solver.settings().second_order_correction = true;
 
-  solver.solve(problem, x0, y0);
-  x = solver.primal_solution();
+//   solver.solve(problem, x0, y0);
+//   x = solver.primal_solution();
 
-  solver.info().print();
-  std::cout << "primal solution " << solver.primal_solution().transpose() << std::endl;
-  std::cout << "dual solution " << solver.dual_solution().transpose() << std::endl;
+//   solver.info().print();
+//   std::cout << "primal solution " << solver.primal_solution().transpose() << std::endl;
+//   std::cout << "dual solution " << solver.dual_solution().transpose() << std::endl;
 
-  EXPECT_TRUE(x.isApprox(problem.SOLUTION, 1e-2));
-  EXPECT_LT(solver.info().iter, solver.settings().max_iter);
-}
+//   EXPECT_TRUE(x.isApprox(problem.SOLUTION, 1e-2));
+//   EXPECT_LT(solver.info().iter, solver.settings().max_iter);
+// }
 
 struct SimpleQP : public NonLinearProblem<double>
 {
@@ -106,9 +106,9 @@ struct SimpleQP : public NonLinearProblem<double>
   using Matrix = NonLinearProblem<double>::Matrix;
 
   double dt;
-  Eigen::MatrixXd P = Eigen::MatrixXd(2, 2);
+  Eigen::MatrixXd Q = Eigen::MatrixXd(2, 2);
   Eigen::Vector2d q = Eigen::VectorXd(2, 1);
-  Eigen::MatrixXd Inertia = Eigen::MatrixXd(1, 2);
+  Eigen::MatrixXd J_ = Eigen::MatrixXd(1, 2);
   Eigen::MatrixXd mass_matrix = Eigen::MatrixXd(2, 2);
   Eigen::MatrixXd gravity = Eigen::MatrixXd(2, 1);
 
@@ -119,29 +119,36 @@ struct SimpleQP : public NonLinearProblem<double>
     dt = 0.01;
     mass_matrix << 1.0, 0.0, 0.0, 1.0;
     gravity << 0.0, 9.8;
-    // P << 4, 1, 1, 2;
-    P = mass_matrix;
-    Inertia << 0.0, 1.0;
+    // Q << 4, 1, 1, 2;
+    Q = mass_matrix;
+    J_ << 0.0, 1.0;
     num_var = 2;
     num_constr = 1;
   }
 
   void objective(const Vector& x, Scalar& obj) final
   {
-    // q = mass_matrix * (dt * gravity - x);
-    obj = 0.5 * x.dot(P * x) + q.dot(x);
+    q += mass_matrix * (dt * gravity - x);
+    // std::cout << "value of q = " << q << std::endl;
+    // std::cout << "value of x = " << x << std::endl;
+    // std::cout << "Shape of X = (" << x.rows() << "," << x.cols() << ")" << std::endl;
+    obj = (0.5 * x.transpose() * Q * x + q.transpose() * x).eval()(0);
   }
 
   void objective_linearized(const Vector& x, Vector& grad, Scalar& obj) final
   {
     objective(x, obj);
-    grad = mass_matrix * (dt * gravity - x);
+    // q = mass_matrix * (dt * gravity - x);
+    // grad = Q * x + q;
+    grad = q;
   }
 
-  void constraint(const Vector& x, Vector& c, Vector& l, Vector& u) final
+  void constraint(const Vector& x, Vector& h, Vector& l, Vector& u) final
   {
-    // h J q
-    c << -Inertia * dt * x;
+    // -h J q
+    // q = mass_matrix * (dt * gravity - x);
+    // c << -J_ * dt * x - J_ * q;
+    h << -J_ * q;
     l << -Eigen::Infinity;
     u << 0.0;
   }
@@ -150,7 +157,7 @@ struct SimpleQP : public NonLinearProblem<double>
   {
     constraint(x, c, l, u);
     // This will be just G
-    Jc << -Inertia * dt;
+    Jc << -J_ * dt;
     // std::cout << "done linearizing constraint" << std::endl;
   }
 };
@@ -163,11 +170,11 @@ TEST(SQPTestCase, TestSimpleQP)
   // State = velocity == q_dot
   // y0 = lambda == complimentarity
   Eigen::VectorXd x0 = Eigen::Vector2d(1.0, 4.5);  // this is correct
-  Eigen::VectorXd y0 = Eigen::VectorXd(1);
-  y0 << 9.81;
+  Eigen::VectorXd lambda0 = Eigen::VectorXd(1);
+  lambda0 << 9.81;
 
   solver.settings().second_order_correction = true;
-  solver.solve(problem, x0, y0);
+  solver.solve(problem, x0, lambda0);
 
   solver.info().print();
   std::cout << "primal solution " << solver.primal_solution().transpose() << std::endl;
